@@ -1,6 +1,7 @@
 #include <lmic.h>
 #include <hal/hal.h>
 #include <SPI.h>
+#include <CayenneLPP.h>
 #include "main.h"
 #include "lora.h"
 
@@ -53,10 +54,16 @@ void do_send() {
         // note: this uses the sflt16 datum (https://github.com/mcci-catena/arduino-lmic#sflt16)
         //uint16_t payloadTemp = LMIC_f2sflt16(temperature);
 
-        // Make payload: [average, min, max]
-        payload[0] = round(average * 100);
-        payload[1] = round(minimum * 100);
-        payload[2] = round(maximum * 100);
+        /* construct packet:
+            channel 1: average
+            channel 2: min
+            channel 3: max
+        */
+        CayenneLPP lpp(4);
+        lpp.reset();
+        lpp.addCurrent(1, round(average * 100));
+        lpp.addCurrent(2, round(minimum * 100));
+        lpp.addCurrent(3, round(maximum * 100));
 
         // Serial.print("Sending data: "); Serial.print(average); Serial.print(", "); Serial.print(minimum); Serial.print(", "); Serial.println(maximum);
 
@@ -64,7 +71,7 @@ void do_send() {
         // transmit on port 1 (the first parameter); you can use any value from 1 to 223 (others are reserved).
         // don't request an ack (the last parameter, if not zero, requests an ack from the network).
         // Remember, acks consume a lot of network resources; don't ask for an ack unless you really need it.
-        LMIC_setTxData2(1, payload, sizeof(payload)-1, 0);
+        LMIC_setTxData2(1, lpp.getBuffer(), lpp.getSize(), 0);
         // Serial.println("Send Complete");
     } // else {
         // os_setTimedCallback(&sendjob, os_getTime()+sec2osticks(SEND_INTERVAL * 60), do_send);
