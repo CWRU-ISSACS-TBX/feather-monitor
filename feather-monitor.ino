@@ -1,5 +1,3 @@
-#include <EmonLib.h>
-
 /*******************************************************************************
  * The Things Network - Sensor Data Example
  *
@@ -21,7 +19,7 @@
 #include <lmic.h>
 #include <hal/hal.h>
 #include <SPI.h>
-#include "EmonLib.h"
+#include <EmonLib.h>
 #include "lora.h"
 
 int num_readings = 0;
