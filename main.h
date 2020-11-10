@@ -9,4 +9,7 @@ extern double maximum_reading;
 // clamp sensor
 extern EnergyMonitor emon0;
 
+extern osjob_t sendjob;
+extern osjob_t readjob;
+
 #endif
