@@ -40,7 +40,7 @@ void do_send(float num, float sum, float maximum, float minimum) {
             channel 2: min
             channel 3: max
         */
-        CayenneLPP lpp(128);
+        CayenneLPP lpp(12);
         lpp.reset();
         lpp.addAnalogOutput(1, average);
         lpp.addAnalogOutput(2, minimum);
