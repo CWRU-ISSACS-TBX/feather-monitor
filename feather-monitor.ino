@@ -21,6 +21,7 @@
 #include <SPI.h>
 #include <EmonLib.h>
 #include "lora.h"
+#include "sensor.h"
 
 int num_readings = 0;
 double sum_readings = 0;
@@ -30,13 +31,8 @@ double maximum_reading = 0;
 // Clamp sensor
 EnergyMonitor emon0;
 
-/* TODO: we can probably get rid of this */
-void printHex2(unsigned v) {
-    v &= 0xff;
-    // if (v < 16)
-        // Serial.print('0');
-    // Serial.print(v, HEX);
-}
+osjob_t sendjob;
+osjob_t readjob;
 
 /* TODO: need to fix this, it's ugly */
 void onEvent (ev_t ev) {
@@ -100,7 +96,8 @@ void onEvent (ev_t ev) {
             // Serial.println(F("EV_REJOIN_FAILED"));
             break;
         case EV_TXCOMPLETE:
-            // Serial.println(F("EV_TXCOMPLETE (includes waiting for RX windows)"));
+            //Serial.println(F("EV_TXCOMPLETE (includes waiting for RX windows)"));
+            Serial.println(F("Packet transmitted"));
             if (LMIC.txrxFlags & TXRX_ACK)
                 // Serial.println(F("Received ack"));
             if (LMIC.dataLen) {
@@ -116,7 +113,7 @@ void onEvent (ev_t ev) {
                 // }
             }
             // Schedule next transmission
-            // os_setTimedCallback(&sendjob, os_getTime()+sec2osticks(SEND_INTERVAL * 60), do_send);
+            //os_setTimedCallback(&readjob, os_getTime()+sec2osticks(READING_INTERVAL), read_current);
             break;
         case EV_LOST_TSYNC:
             // Serial.println(F("EV_LOST_TSYNC"));
@@ -157,17 +154,20 @@ void onEvent (ev_t ev) {
 }
 
 void setup() {
-    // delay(5000);
-    // while (! Serial);
-    // Serial.begin(9600);
-    // Serial.println(F("Starting"));
+    delay(5000);
+    while (!Serial)
+        ;
+    Serial.begin(9600);
+    Serial.println(F("Starting"));
+    Serial.print(F("Sensor readings interval: ")); Serial.print(READING_INTERVAL); Serial.println(F(" ms"));
+    Serial.print(F("Sending interval: ")); Serial.print(SEND_INTERVAL); Serial.println(F(" readings"));
 
     // Set up current clamp
-    emon0.current(0, 160.0); // Current: input pin, calibration.
+    //emon0.current(0, 160.0); // Current: input pin, calibration.
     // Take a few initial readings. Otherwise the sensor doesn't read properly
-    for (int i = 0; i < 10; i++) {
-      emon0.calcIrms(1480);
-    }
+    //for (int i = 0; i < 10; i++) {
+    //  emon0.calcIrms(1480);
+    //}
 
     // LMIC init
     os_init();
@@ -178,18 +178,14 @@ void setup() {
     // Set the data rate to Spreading Factor 7.  This is the fastest supported rate for 125 kHz channels, and it
     // minimizes air time and battery power. Set the transmission power to 14 dBi (25 mW).
     LMIC_setDrTxpow(DR_SF7,14);
-    // in the US, with TTN, it saves join time if we start on subband 1 (channels 8-15). This will
-    // get overridden after the join by parameters from the network. If working with other
-    // networks or in other regions, this will need to be changed.
+    // helium uses sub-band 2 (0-indexed)
     LMIC_selectSubBand(1);
 
-    // LMIC_setClockError(1 * MAX_CLOCK_ERROR / 40);
+    LMIC_setClockError(1 * MAX_CLOCK_ERROR / 40);
 
-    // Start job (sending automatically starts OTAA too)
-    // do_send(&sendjob);
-    // uint8_t[] test payload = 
-    // static uint8_t payload[4];
-    // LMIC_setTxData2(2, , sizeof(payload)-1, 0);
+    /* send a dummy packet for activation */
+    send_dummy();
+    /* starting cycle of reading currents */
     read_current(&readjob);
 }
 
