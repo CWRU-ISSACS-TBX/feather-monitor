@@ -1,6 +1,8 @@
 #ifndef EUI_CONFIG_H
 #define EUI_CONFIG_H
 
+/* THESE VALUES MUST BE UNIQUE FOR EACH DEVICE! MAKE SURE TO CHANGE THEM! */
+
 // This EUI must be in little-endian format, so least-significant-byte
 // first. When copying an EUI from Helium output, this means to reverse
 // the bytes.
