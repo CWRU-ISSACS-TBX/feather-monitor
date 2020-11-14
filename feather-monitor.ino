@@ -22,6 +22,7 @@
 #include <EmonLib.h>
 #include "lora.h"
 #include "sensor.h"
+#include "config.h"
 
 int num_readings = 0;
 double sum_readings = 0;
@@ -97,7 +98,9 @@ void onEvent (ev_t ev) {
             break;
         case EV_TXCOMPLETE:
             //Serial.println(F("EV_TXCOMPLETE (includes waiting for RX windows)"));
-            Serial.println(F("Packet transmitted"));
+            if (SERIALDEBUG) {
+                Serial.println(F("Packet transmitted"));
+            }
             if (LMIC.txrxFlags & TXRX_ACK)
                 // Serial.println(F("Received ack"));
             if (LMIC.dataLen) {
@@ -155,19 +158,21 @@ void onEvent (ev_t ev) {
 
 void setup() {
     delay(5000);
-    while (!Serial)
-        ;
-    Serial.begin(9600);
-    Serial.println(F("Starting"));
-    Serial.print(F("Sensor readings interval: ")); Serial.print(READING_INTERVAL); Serial.println(F(" ms"));
-    Serial.print(F("Sending interval: ")); Serial.print(SEND_INTERVAL); Serial.println(F(" readings"));
+    if (SERIALDEBUG) {
+        while (!Serial)
+            ;
+        Serial.begin(9600);
+        Serial.println(F("Starting"));
+        Serial.print(F("Sensor readings interval: ")); Serial.print(READING_INTERVAL); Serial.println(F(" ms"));
+        Serial.print(F("Sending interval: ")); Serial.print(SEND_INTERVAL); Serial.println(F(" readings"));
+    }
 
     // Set up current clamp
-    //emon0.current(0, 160.0); // Current: input pin, calibration.
+    emon0.current(0, SENSOR_CAL); // Current: input pin, calibration.
     // Take a few initial readings. Otherwise the sensor doesn't read properly
-    //for (int i = 0; i < 10; i++) {
-    //  emon0.calcIrms(1480);
-    //}
+    for (int i = 0; i < 10; i++) {
+      emon0.calcIrms(1480);
+    }
 
     // LMIC init
     os_init();

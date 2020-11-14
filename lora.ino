@@ -5,6 +5,7 @@
 #include "main.h"
 #include "lora.h"
 #include "eui-config.h"
+#include "config.h"
 
 void os_getArtEui (u1_t* buf) { memcpy_P(buf, APPEUI, 8);}
 
@@ -29,9 +30,13 @@ const lmic_pinmap lmic_pins = {
 void do_send(float num, float sum, float maximum, float minimum) {
     // Check if there is not a current TX/RX job running
     if (LMIC.opmode & OP_TXRXPEND) {
-        Serial.println(F("OP_TXRXPEND, not sending"));
+        if (SERIALDEBUG) {
+            Serial.println(F("OP_TXRXPEND, not sending"));
+        }
     } else if (LMIC.opmode & OP_TXDATA) {
-        Serial.println(F("OP_TXDATA, not sending"));
+        if (SERIALDEBUG) {
+            Serial.println(F("OP_TXDATA, not sending"));
+        }
     } else if (num > 0) {
         float average = sum / num;
 
@@ -46,7 +51,9 @@ void do_send(float num, float sum, float maximum, float minimum) {
         lpp.addAnalogOutput(2, minimum);
         lpp.addAnalogOutput(3, maximum);
 
-        Serial.print("Sending data: "); Serial.print(average); Serial.print(", "); Serial.print(minimum); Serial.print(", "); Serial.println(maximum);
+        if (SERIALDEBUG) {
+            Serial.print("Sending data: "); Serial.print(average); Serial.print(", "); Serial.print(minimum); Serial.print(", "); Serial.println(maximum);
+        }
 
         // prepare upstream data transmission at the next possible time.
         // transmit on port 1 (the first parameter); you can use any value from 1 to 223 (others are reserved).
@@ -54,19 +61,29 @@ void do_send(float num, float sum, float maximum, float minimum) {
         lmic_tx_error_t result = LMIC_setTxData2(1, lpp.getBuffer(), lpp.getSize(), 0);
         switch (result) {
             case 0:
-                Serial.println("packet queued");
+                if (SERIALDEBUG) {
+                    Serial.println("packet queued");
+                }
                 break;
             case -1:
-                Serial.println("busy | could not queue packet");
+                if (SERIALDEBUG) {
+                    Serial.println("busy | could not queue packet");
+                }
                 break;
             case -2:
-                Serial.println("packet too big | could not queue packet");
+                if (SERIALDEBUG) {
+                    Serial.println("packet too big | could not queue packet");
+                }
                 break;
             case -3:
-                Serial.println("not feasible | could not queue packet");
+                if (SERIALDEBUG) {
+                    Serial.println("not feasible | could not queue packet");
+                }
                 break;
             case -4:
-                Serial.println("failed | could not queue packet");
+                if (SERIALDEBUG) {
+                    Serial.println("failed | could not queue packet");
+                }
                 break;
         }
     } // else {
